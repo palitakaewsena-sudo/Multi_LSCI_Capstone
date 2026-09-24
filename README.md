@@ -2,28 +2,28 @@
 
 Multispectral camera video and pulse-oximeter data recording, along with LSCI (Laser Speckle Contrast Imaging) and SPG/iPPG analysis pipelines.
 
-## Project Structure
+## Project Overview
 
-- `Arduino_pulse_control/`: Arduino sketch (`.ino`) and timing diagrams for triggering and synchronizing the camera.
-- `Camera_SDK/`: Thorlabs TSI SDK and DLLs for camera acquisition and control.
-- `Recording_camera/`: Scripts for recording multimodal data (e.g., `record_multimodal.py`) and configuration files.
-- `SPG_NIR-iPPG/`: Contains two analysis pipelines for SPG and iPPG:
-  - `Baseline/`: Baseline pipeline (standard analysis).
-  - `SQI/`: Advanced pipelines using Signal Quality Index (SQI).
-- `Split_video/`: Tools for splitting video channels.
-- `Speckle_Mapping/`: LSCI temporal APU (Arbitrary Perfusion Units) mapping and analysis.
+This repository provides a complete end-to-end toolkit for capturing, synchronizing, and analyzing multimodal biomedical signals (Camera + Pulse Oximeter). It includes hardware trigger code for Arduino, recording scripts, and advanced signal processing pipelines using Speckle Plethysmography (SPG) and Imaging Photoplethysmography (iPPG).
 
-## Setup
+## Directory Structure
 
-1. Install Python dependencies:
+Here is a summary of what each folder contains. **(Click on the folders to read their specific README files for detailed usage instructions and examples.)**
+
+- **[`Arduino_pulse_control/`](Arduino_pulse_control/README.md)**: Arduino sketch (`.ino`) and timing logic to trigger the camera and synchronize it with the LED/Pulse Oximeter.
+- **[`Camera_SDK/`](Camera_SDK/)**: Thorlabs TSI SDK and DLLs required for operating the Thorlabs scientific camera.
+- **[`Recording_camera/`](Recording_camera/README.md)**: Python scripts and configurations (`config.yaml`) used for real-time multimodal recording.
+- **[`Speckle_Mapping/`](Speckle_Mapping/README.md)**: Generates 2D LSCI temporal APU (Arbitrary Perfusion Units) maps from the recorded videos.
+- **[`Split_video/`](Split_video/README.md)**: Utilities for splitting multiplexed video channels based on user-selected ROI.
+- **[`SPG_NIR-iPPG/`](SPG_NIR-iPPG/README.md)**: The core signal processing pipelines containing two main approaches:
+  - `Baseline/`: Standard bandpass filtering analysis.
+  - `SQI/`: Advanced analysis utilizing Signal Quality Index (SQI) to filter out noisy pulses.
+
+## Quick Setup
+
+1. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
-2. For the Thorlabs camera SDK, ensure that the DLLs in `Camera_SDK/dll/` are accessible or properly installed in your system PATH as required by the `thorlabs_tsi_sdk`.
-
-## Usage
-
-Example for recording multimodal data:
-```bash
-python Recording_camera/record_multimodal.py --config Recording_camera/config.yaml
-```
+2. **Camera SDK:** Ensure that the DLLs in `Camera_SDK/dll/` are accessible in your system PATH, as required by the Thorlabs SDK.
+3. **Data Folders:** Place your input recordings (e.g., `recording_CH3_1064nm.mkv`, `pulse_data.csv`, `dark_frame_CH3.npy`) into the `data/input/` directory before running the analysis pipelines. All outputs will be automatically saved in the `results/` folder.
