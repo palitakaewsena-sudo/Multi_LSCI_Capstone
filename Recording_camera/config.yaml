@@ -1,0 +1,137 @@
+# =============================================================================
+#  Multimodal Biomedical Imaging Platform — Configuration
+# =============================================================================
+#
+#  This file configures both the multispectral camera acquisition
+#  (Thorlabs CS135MUN + Arduino trigger controller) and the pulse
+#  oximeter (MOD-PULSE sensor + Arduino sync generator).
+#
+#  Edit the relevant sections before recording.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+#  Camera (Thorlabs CS135MUN)
+# -----------------------------------------------------------------------------
+camera:
+  expected_model: CS135MUN
+  serial_number: null
+  exposure_time_us: 6000 # 3.0 ms (must leave margin: exp + readout < 8333 µs at 120 Hz)
+  gain: 20
+  frame_buffer_size: 2048
+  image_poll_timeout_ms: 10
+  roi:
+    x: 0
+    y: 0
+    width: 520
+    height: 680
+
+# -----------------------------------------------------------------------------
+#  Arduino — Camera Trigger Controller
+# -----------------------------------------------------------------------------
+#  Firmware: firmware/camera_trigger/camera_trigger.ino
+#  Generates 240 Hz active-low camera trigger on D3 and
+#  cycles 4 illumination channels (D2, D8, D9, D10).
+# -----------------------------------------------------------------------------
+arduino:
+  # Set to null for auto-detect, or set manually such as "COM5".
+  port: null
+  baud_rate: 115200
+  handshake_timeout_s: 5.0
+  reset_wait_s: 2.0
+  read_timeout_s: 0.0
+  trigger_rate_hz: 120
+  expected_device_id: ARDUINO_UNO_R3_MULTISPECTRAL_TRIGGER
+  allow_description_fallback: false
+  start_retries: 3
+  start_retry_delay_s: 0.5
+  passive_mode: false
+
+
+# -----------------------------------------------------------------------------
+#  Camera Acquisition
+# -----------------------------------------------------------------------------
+acquisition:
+  duration_s: 30
+  target_fps: 120
+  # true = wait for Enter before sending START to Arduino and recording video.
+  wait_for_user_start: true
+  # false = allow recovery and keep recording if a transient serial frame is lost
+  strict_frame_sync: false
+  serial_sync_grace_s: 0.5
+  no_frame_timeout_s: 5.0
+  output_dir: .
+  video_filename: recording.mkv
+  metadata_filename: metadata.csv
+  log_filename: acquisition.log
+  video_codec: FFV1
+
+# -----------------------------------------------------------------------------
+#  Camera Illumination Channels
+# -----------------------------------------------------------------------------
+channels:
+  - id: 0
+    wavelength_nm: 786 
+  - id: 1
+    wavelength_nm: 520
+  - id: 2
+    wavelength_nm: 787 
+  - id: 3
+    wavelength_nm: 1064  
+
+# =============================================================================
+#  Pulse Oximeter (MOD-PULSE Sensor)
+# =============================================================================
+#  Firmware: firmware/pulse_oximeter/pulse_oximeter.ino
+#  Reads 5-byte UART packets from the MOD-PULSE sensor and streams
+#  compact CSV (frame,ir,hr,spo2) at 240 Hz over USB serial.
+#
+#  Requires a SECOND Arduino Uno connected to a different COM port
+#  than the camera trigger controller.
+# =============================================================================
+pulse_oximeter:
+
+  # --- Serial port ---
+  serial:
+    # Set to null for auto-detect, or specify e.g. "COM3".
+    port: null
+    baud_rate: 115200
+    handshake_timeout_s: 3.0
+
+  # --- Capture settings ---
+  capture:
+    frame_rate: 120          # Arduino Timer1 interrupt rate (Hz)
+    duration_s: 30            # Capture duration (seconds)
+    output_dir: .
+    csv_filename: pulse_data.csv
+    plot_filename: cPPG_analysis.png
+
+  # --- cPPG Analysis parameters ---
+  analysis:
+    bandpass_low_hz: 0.5      # Bandpass filter low cutoff (Hz)
+    bandpass_high_hz: 4.0     # Bandpass filter high cutoff (Hz)
+    filter_order: 4           # Butterworth filter order
+    peak_min_distance_s: 0.5  # Minimum peak-to-peak interval (s)
+    peak_prominence: 0.3      # Minimum peak prominence (normalized)
+
+# =============================================================================
+#  Speckle Flow Analysis
+# =============================================================================
+speckle_analysis:
+  # --- Temporal Speckle Contrast ---
+  temporal_window_frames: 30        # frames per sliding window
+  temporal_stride: 1                # stride for sliding window
+
+  # --- Vr Profile ---
+  spatial_window_size: 7            # kernel size for spatial averaging
+  vr_epsilon: 1e-6                  # prevent division by zero
+
+  # --- Wavelength Differencing ---
+  differencing_pairs:
+    - [520, 787]                    # Medium: 787 - 520
+    - [520, 1064]                   # Deep: 1064 - 520
+    - [787, 1064]                   # Deep Only: 1064 - 787
+
+  # --- Visualization ---
+  colormap: "inferno"
+  vmin_percentile: 2
+  vmax_percentile: 98
